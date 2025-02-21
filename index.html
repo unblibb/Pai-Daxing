@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智享退休规划系统</title>
+    <style>
+        :root {
+            --primary: #4361ee;  /* 专业蓝 */
+            --secondary: #6c757d;
+            --accent: #00b4d8;   /* 点缀色 */
+            --bg: #f8f9ff;       /* 背景色 */
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            background: var(--bg);
+            color: #2b2d42;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            position: relative;
+            display: inline-block;
+        }
+        .header h1::after {
+            content: "";
+            display: block;
+            width: 60%;
+            height: 3px;
+            background: var(--accent);
+            margin: 0.5rem auto 0;
+        }
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .input-group {
+            position: relative;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #4a4c60;
+            font-size: 0.95rem;
+        }
+        .input-group input, 
+        .input-group select {
+            width: 100%;
+            padding: 0.875rem;
+            border: 2px solid #e0e0e9;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+            outline: none;
+        }
+        button.calculate-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button.calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.2);
+        }
+        .result-panel {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: #f9faff;
+            border-radius: 1rem;
+            border: 1px solid rgba(67, 97, 238, 0.1);
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .metric-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .metric-card {
+            padding: 1.5rem;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .metric-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .allocation-chart {
+            width: 100%;
+            height: 200px;
+            margin: 2rem 0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            .header h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>智享退休规划系统</h1>
+            <p>专业级退休方案设计与资产配置工具</p>
+        </div>
+
+        <div class="input-grid">
+            <div class="input-group">
+                <label>当前年龄</label>
+                <input type="number" id="currentAge" value="30" min="20" max="60">
+            </div>
+            <div class="input-group">
+                <label>计划退休年龄</label>
+                <input type="number" id="retireAge" value="55" min="50" max="70">
+            </div>
+            <div class="input-group">
+                <label>当前月收入 (¥)</label>
+                <input type="number" id="income" value="15000">
+            </div>
+            <div class="input-group">
+                <label>每月可投资金额 (¥)</label>
+                <input type="number" id="monthlySave" value="3000">
+            </div>
+            <div class="input-group">
+                <label>风险偏好</label>
+                <select id="riskLevel">
+                    <option value="1">保守型 (1.5-3%)</option>
+                    <option value="2">平衡型 (2.5-4%)</option>
+                    <option value="3">进取型 (4-5%)</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="calculate-btn" onclick="calculate()">立即生成专业方案</button>
+
+        <div class="result-panel" id="results">
+            <div class="metric-group">
+                <div class="metric-card">
+                    <div class="metric-value" id="totalAmount">-</div>
+                    <div class="metric-label">退休资产总额</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="monthlyIncome">-</div>
+                    <div class="metric-label">每月可支配收入</div>
+                </div>
+            </div>
+
+            <div id="allocationChart" class="allocation-chart"></div>
+
+            <div class="metric-group">
+                <div class="metric-card">
+                    <div class="metric-value" id="insurance">-</div>
+                    <div class="metric-label">保险配置比例</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="finance">-</div>
+                    <div class="metric-label">理财配置比例</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="fund">-</div>
+                    <div class="metric-label">基金配置比例</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const config = {
+            conservative: { rate: 0.03, allocation: [50, 30, 20] },
+            balanced: { rate: 0.045, allocation: [30, 40, 30] },
+            aggressive: { rate: 0.055, allocation: [20, 30, 50] }
+        };
+
+        let chart = null;
+
+        function calculate() {
+            const currentAge = parseInt(document.getElementById('currentAge').value);
+            const retireAge = parseInt(document.getElementById('retireAge').value);
+            const monthlySave = parseInt(document.getElementById('monthlySave').value);
+            const riskLevel = document.getElementById('riskLevel').value;
+
+            if(retireAge <= currentAge) {
+                alert("退休年龄必须大于当前年龄");
+                return;
+            }
+
+            const strategy = {
+                '1': config.conservative,
+                '2': config.balanced,
+                '3': config.aggressive
+            }[riskLevel];
+
+            const years = retireAge - currentAge;
+            const monthlyRate = strategy.rate / 12;
+            const totalMonths = years * 12;
+            
+            const futureValue = monthlySave * 
+                (Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate;
+
+            // 更新显示
+            document.getElementById('totalAmount').innerHTML = `¥${(futureValue/10000).toFixed(1)}万`;
+            document.getElementById('monthlyIncome').innerHTML = `¥${(futureValue * 0.04 / 12).toFixed(0)}`;
+            
+            document.getElementById('insurance').innerHTML = `${strategy.allocation[0]}%`;
+            document.getElementById('finance').innerHTML = `${strategy.allocation[1]}%`;
+            document.getElementById('fund').innerHTML = `${strategy.allocation[2]}%`;
+
+            // 绘制图表
+            renderChart(strategy.allocation);
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function renderChart(allocation) {
+            const options = {
+                series: allocation,
+                chart: {
+                    type: 'donut',
+                    height: '100%',
+                    fontFamily: 'Inter'
+                },
+                colors: ['#4361ee', '#00b4d8', '#4cc9f0'],
+                labels: ['保险配置', '理财配置', '基金配置'],
+                dataLabels: {
+                    enabled: false
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            labels: {
+                                show: true,
+                                total: {
+                                    show: true,
+                                    label: '资产配置',
+                                    color: '#2b2d42',
+                                    fontSize: '16px',
+                                    formatter: () => '资产配置'
+                                }
+                            }
+                        }
+                    }
+                },
+                legend: {
+                    position: 'bottom',
+                    horizontalAlign: 'center'
+                }
+            };
+
+            if(chart) chart.destroy();
+            chart = new ApexCharts(document.querySelector("#allocationChart"), options);
+            chart.render();
+        }
+
+        // 初始化计算
+        calculate();
+    </script>
+</body>
+</html>
